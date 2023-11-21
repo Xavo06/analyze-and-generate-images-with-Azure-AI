@@ -48,8 +48,8 @@ function App() {
 
   return (
     <div>
-      <h1>Image Analyzer</h1>
-
+      <h1>Analizador de imagenes</h1>
+       
       <label htmlFor="imageUrl">Dirección URL de la imagen:</label>
       <input
         type="text"
