@@ -1,35 +1,86 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { analyzeImage } from './azure-image-analysis'; // Ajusta la ruta según la ubicación real
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenSSL Image Analyzer</title>
-</head>
-<body>
-  <h1>OpenSSL Image Analyzer</h1>
+function App() {
+  const [imageUrl, setImageUrl] = useState('');
+  const [image, setImage] = useState(null);
+  const [analysisResults, setAnalysisResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  <label for="imageUrl">Dirección URL de la imagen:</label>
-  <input type="text" id="imageUrl" placeholder="Ingrese la URL de la imagen">
+  const cargarImagen = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  <button onclick="analizarImagen()">Analizar Imagen</button>
-  <button onclick="generarImagen()">Generar Imagen</button>
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error('No se pudo cargar la imagen. Verifica la URL.');
+      }
 
-  <script>
-    function analizarImagen() {
-      // Lógica para analizar la imagen
-      var imageUrl = document.getElementById("imageUrl").value;
-      // Aquí puedes realizar acciones con la URL de la imagen para análisis
-      console.log("Analizando la imagen: " + imageUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setImage(url);
+    } catch (error) {
+      console.error('Error al cargar la imagen:', error);
+      setError('Error al cargar la imagen. Verifica la URL.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    function generarImagen() {
-      // Lógica para generar la imagen
-      var imageUrl = document.getElementById("imageUrl").value;
-      // Aquí puedes realizar acciones con la URL de la imagen para generación
-      console.log("Generando la imagen: " + imageUrl);
+  const analizarImagen = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await cargarImagen(); // Cargar la imagen antes de analizarla
+
+      const results = await analyzeImage(imageUrl);
+      setAnalysisResults(results);
+    } catch (error) {
+      console.error('Error al analizar la imagen:', error);
+      setError('Error al analizar la imagen. Verifica la URL.');
+    } finally {
+      setLoading(false);
     }
-  </script>
-</body>
-</html>
+  };
+
+  return (
+    <div>
+      <h1>Image Analyzer</h1>
+
+      <label htmlFor="imageUrl">Dirección URL de la imagen:</label>
+      <input
+        type="text"
+        id="imageUrl"
+        placeholder="Ingrese la URL de la imagen"
+        value={imageUrl}
+        onChange={(e) => setImageUrl(e.target.value)}
+      />
+
+      <button onClick={analizarImagen} disabled={loading}>
+        {loading ? 'Analizando...' : 'Analizar Imagen'}
+      </button>
+
+      {image && (
+        <div>
+          <h2>Imagen:</h2>
+          <img src={image} alt="Imagen analizada" style={{ maxWidth: '100%' }} />
+        </div>
+      )}
+
+      {analysisResults && (
+        <div>
+          <h2>Resultados:</h2>
+          <pre>{JSON.stringify(analysisResults, null, 2)}</pre>
+          <p>Imagen procesada: {imageUrl}</p>
+        </div>
+      )}
+
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+    </div>
+  );
+}
+
+export default App;
